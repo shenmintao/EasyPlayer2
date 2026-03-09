@@ -28,22 +28,32 @@ import kotlinx.coroutines.launch
  * - 中心键/Enter/空格：播放/暂停
  * - 上/下方向键：显示/隐藏控制栏
  * - 媒体键：播放/暂停/快进/快退/下一集
+ *
+ * @param enabled 当为 false 时（如选集面板打开时），不拦截按键事件，
+ *                让焦点自然传递给其他 UI 元素
  */
 @Composable
 fun DpadVideoController(
     vm: ControlViewModel,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     seekStepMs: Long = 10_000L,
     onNext: () -> Unit = {},
     onPrevious: () -> Unit = {},
 ) {
+    if (!enabled) return
+
     val focusRequester = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     var seekIndicatorJob by remember { mutableStateOf<Job?>(null) }
 
     // 自动请求焦点，确保可以接收按键事件
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
+    LaunchedEffect(enabled) {
+        if (enabled) {
+            try {
+                focusRequester.requestFocus()
+            } catch (_: Exception) {}
+        }
     }
 
     Box(
