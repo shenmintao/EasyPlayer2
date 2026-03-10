@@ -34,6 +34,7 @@ fun DpadVideoController(
     vm: ControlViewModel,
     modifier: Modifier = Modifier,
     seekStepMs: Long = 10_000L,
+    enabled: Boolean = true,
     onNext: () -> Unit = {},
     onPrevious: () -> Unit = {},
 ) {
@@ -42,9 +43,13 @@ fun DpadVideoController(
     var seekIndicatorJob by remember { mutableStateOf<Job?>(null) }
 
     // 自动请求焦点，确保可以接收按键事件
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
+    LaunchedEffect(enabled) {
+        if (enabled) {
+            focusRequester.requestFocus()
+        }
     }
+
+    if (!enabled) return
 
     Box(
         modifier = modifier
