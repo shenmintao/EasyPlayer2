@@ -1,6 +1,7 @@
 package loli.ball.easyplayer2
 
 import android.content.res.ColorStateList
+import android.view.KeyEvent
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.SeekBar
@@ -159,6 +160,7 @@ fun RowScope.ViewSeekBar(
                 progressTintList = ColorStateList.valueOf(colors.activeTrackColor.toArgb())
                 progressBackgroundTintList = ColorStateList.valueOf(Color.White.copy(alpha = 0.6f).toArgb())
                 secondaryProgressTintList = ColorStateList.valueOf(Color.White.copy(alpha = 0.8f).toArgb())
+                var isTrackingByKey = false
                 setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
                     override fun onProgressChanged(
                         seekBar: SeekBar?,
@@ -166,14 +168,39 @@ fun RowScope.ViewSeekBar(
                         fromUser: Boolean
                     ) {
                         if (fromUser) {
+                            isTrackingByKey = true
                             onValueChange(progress)
                         }
                     }
-                    override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                    override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                        isTrackingByKey = false
+                    }
                     override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                        isTrackingByKey = false
                         onValueChangeFinish()
                     }
                 })
+                // D-pad/遥控器按键不会触发 onStopTrackingTouch，
+                // 需要通过按键监听在确认键按下时完成拖动
+                setOnKeyListener { _, keyCode, event ->
+                    if (event.action == KeyEvent.ACTION_UP && isTrackingByKey &&
+                        (keyCode == KeyEvent.KEYCODE_DPAD_CENTER ||
+                         keyCode == KeyEvent.KEYCODE_ENTER ||
+                         keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER)) {
+                        isTrackingByKey = false
+                        onValueChangeFinish()
+                        true
+                    } else {
+                        false
+                    }
+                }
+                // 遥控器焦点离开时也确认拖动
+                setOnFocusChangeListener { _, hasFocus ->
+                    if (!hasFocus && isTrackingByKey) {
+                        isTrackingByKey = false
+                        onValueChangeFinish()
+                    }
+                }
             }
         },
         update = {
